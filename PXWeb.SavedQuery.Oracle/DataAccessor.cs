@@ -35,9 +35,12 @@ namespace PXWeb.SavedQuery.Oracle
            
             if (string.IsNullOrWhiteSpace(System.Configuration.ConfigurationManager.AppSettings["SavedQueryTableName"]))
             {
-                throw new System.Configuration.ConfigurationErrorsException("AppSetting SavedQueryTableName not set in config file");
+                _savedQueryTableName = "SAVEDQUERYMETA";                
             }
+            else
+            { 
             _savedQueryTableName = System.Configuration.ConfigurationManager.AppSettings["SavedQueryTableName"];
+            }
         }
 
         public PCAxis.Query.SavedQuery Load(int id)
