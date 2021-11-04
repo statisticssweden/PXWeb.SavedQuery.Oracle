@@ -15,6 +15,8 @@ namespace PXWeb.SavedQuery.Oracle
         private string _connectionString;
 
         private string _savedQueryTableOwner;
+        
+        private string _savedQueryTableName;
 
         public DataAccessor()
         {
@@ -30,6 +32,12 @@ namespace PXWeb.SavedQuery.Oracle
                 throw new System.Configuration.ConfigurationErrorsException("AppSetting SavedQueryTableOwner not set in config file");
             }
             _savedQueryTableOwner = System.Configuration.ConfigurationManager.AppSettings["SavedQueryTableOwner"];
+           
+            if (string.IsNullOrWhiteSpace(System.Configuration.ConfigurationManager.AppSettings["SavedQueryTableName"]))
+            {
+                throw new System.Configuration.ConfigurationErrorsException("AppSetting SavedQueryTableName not set in config file");
+            }
+            _savedQueryTableName = System.Configuration.ConfigurationManager.AppSettings["SavedQueryTableName"];
         }
 
         public PCAxis.Query.SavedQuery Load(int id)
@@ -38,7 +46,7 @@ namespace PXWeb.SavedQuery.Oracle
             {
                 conn.Open();
                 
-                var cmd = new OracleCommand("select QueryText from "+ _savedQueryTableOwner + ".SavedQueryMeta where QueryId = :queryId", conn);
+                var cmd = new OracleCommand("select QueryText from "+ _savedQueryTableOwner + "." + _savedQueryTableName + " where QueryId = :queryId", conn);
                 cmd.Parameters.Add("queryId", id);
                 string query = cmd.ExecuteScalar() as string;
 
@@ -58,7 +66,7 @@ namespace PXWeb.SavedQuery.Oracle
             {
                 string insertSQL = @"BEGIN
                         insert into 
-                        {3}.SavedQueryMeta
+                        {3}.{4}
                         (
                             {0}
                             DataSourceType, 
@@ -107,7 +115,7 @@ namespace PXWeb.SavedQuery.Oracle
                     returningPart = "";
                 }
 
-                insertSQL = string.Format(insertSQL, queryIdPartCol, queryIdPartValue, returningPart,_savedQueryTableOwner);
+                insertSQL = string.Format(insertSQL, queryIdPartCol, queryIdPartValue, returningPart,_savedQueryTableOwner,_savedQueryTableName);
 
                 conn.Open();
                 var cmd = new OracleCommand(insertSQL, conn);
@@ -145,7 +153,7 @@ namespace PXWeb.SavedQuery.Oracle
             using (var conn = new OracleConnection(_connectionString))
             {
                 conn.Open();
-                var cmd = new OracleCommand("update "+ _savedQueryTableOwner+".SavedQueryMeta set UsedDate = sysdate, Runs = Runs + 1 where QueryId = :queryId", conn);
+                var cmd = new OracleCommand("update "+ _savedQueryTableOwner+"." + _savedQueryTableName + " set UsedDate = sysdate, Runs = Runs + 1 where QueryId = :queryId", conn);
                 cmd.Parameters.Add("queryId", id);
                 
                 return cmd.ExecuteNonQuery() == 1;
@@ -159,7 +167,7 @@ namespace PXWeb.SavedQuery.Oracle
             using (var conn = new OracleConnection(_connectionString))
             {
                 conn.Open();
-                var cmd = new OracleCommand("update " + _savedQueryTableOwner + ".SavedQueryMeta set UsedDate = sysdate, Runs = Runs + 1, Fails = Fails + 1 where QueryId = :queryId", conn);
+                var cmd = new OracleCommand("update " + _savedQueryTableOwner + "." + _savedQueryTableName + " set UsedDate = sysdate, Runs = Runs + 1, Fails = Fails + 1 where QueryId = :queryId", conn);
                 cmd.Parameters.Add("queryId", id);
                 
                 return cmd.ExecuteNonQuery() == 1;
